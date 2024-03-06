@@ -1,4 +1,8 @@
 version: '3'
+
+# cd devops/keycloak
+# docker compose up
+
 services:
 
   keycloak:

@@ -1,4 +1,8 @@
 version: '3'
+
+# cd devops/keycloak
+# docker compose --file docker-compose-nginx.yml up
+
 services:
   app:
     image: apilogicserver/api_logic_server
