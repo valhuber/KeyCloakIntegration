@@ -8,12 +8,16 @@ services:
     image: apilogicserver/api_logic_server
     container_name: apilogicserver
     restart: always
-    command: ApiLogicServer run --project_name=/projects/KCALS
+    command: ApiLogicServer run --project_name=/servers/KeyCloakIntegration
+    environment:
+      - APILOGICPROJECT_VERBOSE=true
+      - APILOGICPROJECT_CLIENT_URI=//${HOST_IP}
     ports:
       - 5656:5656
     volumes:
-      - $PWD/auth_provider.py:/home/api_logic_server/api_logic_server_cli/prototypes/base/security/authentication_provider/sql/auth_provider.py
-      - $PWD/projects:/projects
+      # - $PWD/auth_provider.py:/home/api_logic_server/api_logic_server_cli/prototypes/base/security/authentication_provider/sql/auth_provider.py
+      - $PWD/servers:/Users/val/dev/ApiLogicServer/ApiLogicServer-dev/servers
+      - $PWD/als:/Users/val/dev/ApiLogicServer/ApiLogicServer-dev/build_and_test/ApiLogicServer/venv/lib/python3.11/site-packages/api_logic_server_cli
 
   keycloak:
     image: quay.io/keycloak/keycloak:23.0.6
