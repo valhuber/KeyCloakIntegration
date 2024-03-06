@@ -63,7 +63,8 @@ class Authentication_Provider(Abstract_Authentication_Provider):
         import time
         from jwt.algorithms import RSAAlgorithm
         #jwks_uri = 'https://kc.hardened.be/realms/master/protocol/openid-connect/certs'
-        jwks_uri = 'http://keycloak:8080/realms/kcals/protocol/openid-connect/certs'
+        # TODO use env variable instead of localhost
+        jwks_uri = 'http://localhost:8080/realms/kcals/protocol/openid-connect/certs'
         for i in range(100):
             try:
                 oidc_jwks_uri = requests.get(jwks_uri, verify=False).json()

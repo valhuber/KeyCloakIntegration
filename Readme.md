@@ -35,6 +35,22 @@ curl http://localhost:5656/api/Category -H "Authorization: Bearer ${TOKEN}" | jq
 
 ```
 
+Aside - can use this as bearer... jwt.io will decode it
+
+```python
+data = {
+            "grant_type": "password",
+            "client_id": "alsclient",
+            "username" :f"{username}",
+            "password": f"{password}"
+        }
+        resp = requests.post(f"{TOKEN_ENDPOINT}", data)
+        if resp.status_code == 200:
+            resp_data = json.loads(resp.text)
+            access_token = resp_data["access_token"]
+            return jsonify(access_token=access_token)
+```
+
 ### 2. Start APP Logic Server
 
 Use first Run Config.
@@ -53,6 +69,8 @@ Several changes:
 2. Updated `security/system/authentication.py` call a new `configure_auth` function in the Keycloak Provider.
     * This removes dependency on this file to provider type.
 3. Added the docker compose material (including imports) to the `devops` dir
+4. Note **interim SRA** is included in `ui/safrs-react-admin`
+5. To login, see the `Auth` object in the admin app
 
 
 ![Attempt](images/integrate-keycloak.png)
