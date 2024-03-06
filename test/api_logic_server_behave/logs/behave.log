@@ -1,0 +1,140 @@
+Feature: About Sample # features/about.feature:1
+
+  Scenario: Transaction Processing                           # features/about.feature:3
+    Given Sample Database                                    # features/steps/about.py:9
+    When Transactions are submitted                          # features/steps/about.py:13
+    Then Enforce business policies with Logic (rules + code) # features/steps/about.py:17
+
+Feature: Application Integration # features/api.feature:1
+
+  Scenario: GET Customer          # features/api.feature:3
+    Given Customer Account: VINET # features/steps/api.py:9
+    When GET Orders API           # features/steps/api.py:13
+    Then VINET retrieved          # features/steps/api.py:25
+
+  Scenario: GET Department                      # features/api.feature:9
+    Given Department 2                          # features/steps/api.py:31
+    When GET Department with SubDepartments API # features/steps/api.py:35
+    Then SubDepartments returned                # features/steps/api.py:39
+
+Feature: Authorization # features/authorization.feature:1
+
+  Scenario: Grant           # features/authorization.feature:4
+    Given NW Test Database  # features/steps/authorization.py:9
+    When u1 GETs Categories # features/steps/authorization.py:13
+    Then Only 1 is returned # features/steps/authorization.py:22
+
+  Scenario: Multi-tenant     # features/authorization.feature:10
+    Given NW Test Database   # features/steps/authorization.py:9
+    When sam GETs Customers  # features/steps/authorization.py:30
+    Then only 3 are returned # features/steps/authorization.py:39
+
+  Scenario: Global Filters    # features/authorization.feature:16
+    Given NW Test Database    # features/steps/authorization.py:9
+    When sam GETs Departments # features/steps/authorization.py:49
+    Then only 8 are returned  # features/steps/authorization.py:57
+
+  Scenario: Global Filters With Grants  # features/authorization.feature:22
+    Given NW Test Database              # features/steps/authorization.py:9
+    When s1 GETs Customers              # features/steps/authorization.py:66
+    Then only 1 customer is returned    # features/steps/authorization.py:75
+
+  Scenario: CRUD Permissions  # features/authorization.feature:28
+    Given NW Test Database    # features/steps/authorization.py:9
+    When r1 deletes a Shipper # features/steps/authorization.py:84
+    Then Operation is Refused # features/steps/authorization.py:91
+
+Feature: Optimistic Locking # features/opt_locking.feature:1
+
+  Scenario: Get Category        # features/opt_locking.feature:3
+    Given Category: 1           # features/steps/opt_locking.py:9
+    When Get Cat1               # features/steps/opt_locking.py:15
+    Then Expected Cat1 Checksum # features/steps/opt_locking.py:24
+
+  Scenario: Valid Checksum                   # features/opt_locking.feature:8
+    Given Category: 1                        # features/steps/opt_locking.py:9
+    When Patch Valid Checksum                # features/steps/opt_locking.py:34
+    Then Valid Checksum, Invalid Description # features/steps/opt_locking.py:52
+
+  Scenario: Missing Checksum                 # features/opt_locking.feature:13
+    Given Category: 1                        # features/steps/opt_locking.py:9
+    When Patch Missing Checksum              # features/steps/opt_locking.py:59
+    Then Valid Checksum, Invalid Description # features/steps/opt_locking.py:52
+
+  Scenario: Invalid Checksum    # features/opt_locking.feature:18
+    Given Category: 1           # features/steps/opt_locking.py:9
+    When Patch Invalid Checksum # features/steps/opt_locking.py:79
+    Then Invalid Checksum       # features/steps/opt_locking.py:96
+
+Feature: Place Order # features/place_order.feature:1
+
+  Scenario: Good Order Custom Service                  # features/place_order.feature:3
+    Given Customer Account: ALFKI                      # features/steps/place_order.py:52
+    When Good Order Placed                             # features/steps/place_order.py:58
+    Then Logic adjusts Balance (demo: chain up)        # features/steps/place_order.py:137
+    Then Logic adjusts Products Reordered              # features/steps/place_order.py:148
+    Then Logic sends email to salesrep                 # features/steps/place_order.py:166
+    Then Logic sends kafka message                     # features/steps/place_order.py:153
+    Then Logic adjusts aggregates down on delete order # features/steps/place_order.py:184
+
+  Scenario: Bad Ship of Empty Order            # features/place_order.feature:13
+    Given Customer Account: ALFKI              # features/steps/place_order.py:52
+    When Order Shipped with no Items           # features/steps/place_order.py:219
+    Then Rejected per Do Not Ship Empty Orders # features/steps/place_order.py:253
+
+  Scenario: Bad Order Custom Service          # features/place_order.feature:19
+    Given Customer Account: ALFKI             # features/steps/place_order.py:52
+    When Order Placed with excessive quantity # features/steps/place_order.py:259
+    Then Rejected per Check Credit            # features/steps/place_order.py:307
+
+  Scenario: Alter Item Qty to exceed credit      # features/place_order.feature:25
+    Given Customer Account: ALFKI                # features/steps/place_order.py:52
+    When Order Detail Quantity altered very high # features/steps/place_order.py:320
+    Then Rejected per Check Credit               # features/steps/place_order.py:307
+
+  Scenario: Alter Required Date - adjust logic pruned  # features/place_order.feature:31
+    Given Customer Account: ALFKI                      # features/steps/place_order.py:52
+    When Order RequiredDate altered (2013-10-13)       # features/steps/place_order.py:346
+    Then Balance not adjusted                          # features/steps/place_order.py:372
+
+  Scenario: Set Shipped - adjust logic reuse    # features/place_order.feature:37
+    Given Customer Account: ALFKI               # features/steps/place_order.py:52
+    When Order ShippedDate altered (2013-10-13) # features/steps/place_order.py:383
+    Then Balance reduced 1086                   # features/steps/place_order.py:425
+
+  Scenario: Reset Shipped - adjust logic reuse  # features/place_order.feature:43
+    Given Shipped Order                         # features/steps/place_order.py:435
+    When Order ShippedDate set to None          # features/steps/place_order.py:440
+    Then Logic adjusts Balance by -1086         # features/steps/place_order.py:463
+
+  Scenario: Clone Existing Order              # features/place_order.feature:49
+    Given Shipped Order                       # features/steps/place_order.py:435
+    When Cloning Existing Order               # features/steps/place_order.py:472
+    Then Logic Copies ClonedFrom OrderDetails # features/steps/place_order.py:534
+
+Feature: Salary Change # features/salary_change.feature:1
+
+  Scenario: Audit Salary Change              # features/salary_change.feature:3
+    Given Employee 5 (Buchanan) - Salary 95k # features/steps/salary_change.py:9
+    When Patch Salary to 200k                # features/steps/salary_change.py:13
+    Then Salary_audit row created            # features/steps/salary_change.py:54
+
+  Scenario: Manage ProperSalary              # features/salary_change.feature:8
+    Given Employee 5 (Buchanan) - Salary 95k # features/steps/salary_change.py:9
+    When Retrieve Employee Row               # features/steps/salary_change.py:122
+    Then Verify Contains ProperSalary        # features/steps/salary_change.py:138
+
+  Scenario: Raise Must be Meaningful         # features/salary_change.feature:13
+    Given Employee 5 (Buchanan) - Salary 95k # features/steps/salary_change.py:9
+    When Patch Salary to 96k                 # features/steps/salary_change.py:84
+    Then Reject - Raise too small            # features/steps/salary_change.py:116
+
+Feature: Tests Successful # features/tests_successful.feature:1
+
+  Scenario: Run Tests                    # features/tests_successful.feature:3
+    Given Database and Set of Tests      # features/steps/tests_successful.py:9
+    When Run Configuration: Behave Tests # features/steps/tests_successful.py:13
+    Then No Errors                       # features/steps/tests_successful.py:34
+
+&nbsp;&nbsp;
+/Users/val/dev/ApiLogicServer/ApiLogicServer-dev/build_and_test/ApiLogicServer/ApiLogicProject/test/api_logic_server_behave/behave_run.py completed at March 03, 2024 19:02:43

@@ -1,0 +1,58 @@
+
+The following rules have been activated
+ - 2024-03-03 19:02:41,487 - logic_logger - DEBUG
+Rule Bank[0x106f2dc90] (loaded 2024-03-03 19:02:18.645654)		##   - 2024-03-03 19:02:41,487 - logic_logger - INFO
+Mapped Class[Customer] rules:		##   - 2024-03-03 19:02:41,488 - logic_logger - INFO
+  Constraint Function: None 		##   - 2024-03-03 19:02:41,488 - logic_logger - INFO
+  Derive Customer.Balance as Sum(Order.AmountTotal Where <function declare_logic.<locals>.<lambda> at 0x106ffe700>)		##   - 2024-03-03 19:02:41,488 - logic_logger - INFO
+  RowEvent Customer.customer_defaults() 		##   - 2024-03-03 19:02:41,488 - logic_logger - INFO
+  Constraint Function: None 		##   - 2024-03-03 19:02:41,488 - logic_logger - INFO
+  Derive Customer.UnpaidOrderCount as Count(<class 'database.models.Order'> Where <function declare_logic.<locals>.<lambda> at 0x1071645e0>)		##   - 2024-03-03 19:02:41,488 - logic_logger - INFO
+  Derive Customer.OrderCount as Count(<class 'database.models.Order'> Where None)		##   - 2024-03-03 19:02:41,488 - logic_logger - INFO
+Mapped Class[Order] rules:		##   - 2024-03-03 19:02:41,489 - logic_logger - INFO
+  Derive Order.AmountTotal as Sum(OrderDetail.Amount Where None)		##   - 2024-03-03 19:02:41,489 - logic_logger - INFO
+  RowEvent Order.send_order_to_shipping() 		##   - 2024-03-03 19:02:41,489 - logic_logger - INFO
+  Constraint Function: <function declare_logic.<locals>.do_not_ship_empty_orders at 0x10710bd80> 		##   - 2024-03-03 19:02:41,489 - logic_logger - INFO
+  RowEvent Order.congratulate_sales_rep() 		##   - 2024-03-03 19:02:41,489 - logic_logger - INFO
+  RowEvent Order.order_defaults() 		##   - 2024-03-03 19:02:41,489 - logic_logger - INFO
+  Derive Order.OrderDetailCount as Count(<class 'database.models.OrderDetail'> Where None)		##   - 2024-03-03 19:02:41,489 - logic_logger - INFO
+  RowEvent Order.clone_order() 		##   - 2024-03-03 19:02:41,490 - logic_logger - INFO
+  Derive Order.OrderDate as Formula (1): as_expression=lambda row: datetime.datetime.now())		##   - 2024-03-03 19:02:41,490 - logic_logger - INFO
+Mapped Class[OrderDetail] rules:		##   - 2024-03-03 19:02:41,490 - logic_logger - INFO
+  Derive OrderDetail.Amount as Formula (1): as_expression=lambda row: row.UnitPrice * row.Qua [...]		##   - 2024-03-03 19:02:41,490 - logic_logger - INFO
+  Derive OrderDetail.UnitPrice as Copy(Product.UnitPrice)		##   - 2024-03-03 19:02:41,490 - logic_logger - INFO
+  RowEvent OrderDetail.order_detail_defaults() 		##   - 2024-03-03 19:02:41,490 - logic_logger - INFO
+  Derive OrderDetail.ShippedDate as Formula (2): row.Order.ShippedDate		##   - 2024-03-03 19:02:41,490 - logic_logger - INFO
+Mapped Class[Employee] rules:		##   - 2024-03-03 19:02:41,490 - logic_logger - INFO
+  Constraint Function: None 		##   - 2024-03-03 19:02:41,490 - logic_logger - INFO
+  Constraint Function: <function declare_logic.<locals>.raise_over_20_percent at 0x1071647c0> 		##   - 2024-03-03 19:02:41,491 - logic_logger - INFO
+  Copy to: EmployeeAudit		##   - 2024-03-03 19:02:41,491 - logic_logger - INFO
+Mapped Class[Category] rules:		##   - 2024-03-03 19:02:41,491 - logic_logger - INFO
+  Constraint Function: <function declare_logic.<locals>.valid_category_description at 0x107164220> 		##   - 2024-03-03 19:02:41,491 - logic_logger - INFO
+Mapped Class[Product] rules:		##   - 2024-03-03 19:02:41,491 - logic_logger - INFO
+  Derive Product.UnitsInStock as Formula (1): <function>		##   - 2024-03-03 19:02:41,491 - logic_logger - INFO
+  Derive Product.UnitsShipped as Sum(OrderDetail.Quantity Where <function declare_logic.<locals>.<lambda> at 0x1071644a0>)		##   - 2024-03-03 19:02:41,491 - logic_logger - INFO
+Logic Bank - 31 rules loaded - 2024-03-03 19:02:41,491 - logic_logger - INFO
+Logic Bank - 31 rules loaded - 2024-03-03 19:02:41,492 - logic_logger - INFO
+
+Logic Phase:		ROW LOGIC		(session=0x1112893d0) (sqlalchemy before_flush)			 - 2024-03-03 19:02:41,941 - logic_logger - INFO
+..Shipper[1] {Delete - client} Id: 1, CompanyName: Speedy Express, Phone: (503) 555-9831  row: 0x111267210  session: 0x1112893d0  ins_upd_dlt: dlt - 2024-03-03 19:02:41,942 - logic_logger - INFO
+
+Logic Phase:		ROW LOGIC		(session=0x111726a50) (sqlalchemy before_flush)			 - 2024-03-03 19:02:42,010 - logic_logger - INFO
+..Category[1] {Update - client} Id: 1, CategoryName: Beverages, Description:  [Soft drinks, coffees, teas, beers, and ales-->] x, Client_id: 1  row: 0x111727890  session: 0x111726a50  ins_upd_dlt: upd - 2024-03-03 19:02:42,010 - logic_logger - INFO
+..Category[1] {Constraint Failure: Description cannot be 'x'} Id: 1, CategoryName: Beverages, Description:  [Soft drinks, coffees, teas, beers, and ales-->] x, Client_id: 1  row: 0x111727890  session: 0x111726a50  ins_upd_dlt: upd - 2024-03-03 19:02:42,011 - logic_logger - INFO
+
+Rules Fired:		## - 2024-03-03 19:02:42,011 - logic_logger - INFO
+  Category		## - 2024-03-03 19:02:42,011 - logic_logger - INFO
+    1. Constraint Function: <function declare_logic.<locals>.valid_category_description at 0x107164220> 		## - 2024-03-03 19:02:42,011 - logic_logger - INFO
+
+Logic Phase:		ROW LOGIC		(session=0x11122bf50) (sqlalchemy before_flush)			 - 2024-03-03 19:02:42,041 - logic_logger - INFO
+..Category[1] {Update - client} Id: 1, CategoryName: Beverages, Description:  [Soft drinks, coffees, teas, beers, and ales-->] x, Client_id: 1  row: 0x11122c590  session: 0x11122bf50  ins_upd_dlt: upd - 2024-03-03 19:02:42,041 - logic_logger - INFO
+..Category[1] {Constraint Failure: Description cannot be 'x'} Id: 1, CategoryName: Beverages, Description:  [Soft drinks, coffees, teas, beers, and ales-->] x, Client_id: 1  row: 0x11122c590  session: 0x11122bf50  ins_upd_dlt: upd - 2024-03-03 19:02:42,042 - logic_logger - INFO
+
+Rules Fired:		## - 2024-03-03 19:02:42,042 - logic_logger - INFO
+  Category		## - 2024-03-03 19:02:42,042 - logic_logger - INFO
+    1. Constraint Function: <function declare_logic.<locals>.valid_category_description at 0x107164220> 		## - 2024-03-03 19:02:42,042 - logic_logger - INFO
+
+Logic Phase:		ROW LOGIC		(session=0x111281c10) (sqlalchemy before_flush)			 - 2024-03-03 19:02:42,069 - logic_logger - INFO
+..Category[1] {Update - client} Id: 1, CategoryName: Beverages, Description:  [Soft drinks, coffees, teas, beers, and ales-->] x, Client_id: 1  row: 0x111726790  session: 0x111281c10  ins_upd_dlt: upd - 2024-03-03 19:02:42,069 - logic_logger - INFO

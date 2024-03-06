@@ -1,0 +1,24 @@
+
+Logic Phase:		ROW LOGIC		(session=0x1141c5910) (sqlalchemy before_flush)			 - 2024-03-03 19:02:42,793 - logic_logger - INFO
+..OrderDetail[1040] {Update - client} Id: 1040, OrderId: 10643, ProductId: 28, UnitPrice: 45.6000000000, Quantity:  [15-->] 1110, Discount: 0.25, Amount: 684.0000000000, ShippedDate: None  row: 0x11419bdd0  session: 0x1141c5910  ins_upd_dlt: upd - 2024-03-03 19:02:42,794 - logic_logger - INFO
+..OrderDetail[1040] {Formula Amount} Id: 1040, OrderId: 10643, ProductId: 28, UnitPrice: 45.6000000000, Quantity:  [15-->] 1110, Discount: 0.25, Amount:  [684.0000000000-->] 50616.0000000000, ShippedDate: None  row: 0x11419bdd0  session: 0x1141c5910  ins_upd_dlt: upd - 2024-03-03 19:02:42,794 - logic_logger - INFO
+..OrderDetail[1040] {Prune Formula: ShippedDate [['Order.ShippedDate']]} Id: 1040, OrderId: 10643, ProductId: 28, UnitPrice: 45.6000000000, Quantity:  [15-->] 1110, Discount: 0.25, Amount:  [684.0000000000-->] 50616.0000000000, ShippedDate: None  row: 0x11419bdd0  session: 0x1141c5910  ins_upd_dlt: upd - 2024-03-03 19:02:42,795 - logic_logger - INFO
+....Order[10643] {Update - Adjusting Order: AmountTotal} Id: 10643, CustomerId: ALFKI, EmployeeId: 6, OrderDate: 2013-08-25, RequiredDate: 2013-09-22, ShippedDate: None, ShipVia: 1, Freight: 29.4600000000, ShipName: Alfreds Futterkiste, ShipAddress: Obere Str. 57, ShipCity: Berlin, ShipRegion: Western Europe, ShipZip: 12209, ShipCountry: Germany, AmountTotal:  [1086.00-->] 51018.0000000000, Country: None, City: None, Ready: True, OrderDetailCount: 3, CloneFromOrder: None  row: 0x1141c5dd0  session: 0x1141c5910  ins_upd_dlt: upd - 2024-03-03 19:02:42,798 - logic_logger - INFO
+....Order[10643] {Prune Formula: OrderDate [[]]} Id: 10643, CustomerId: ALFKI, EmployeeId: 6, OrderDate: 2013-08-25, RequiredDate: 2013-09-22, ShippedDate: None, ShipVia: 1, Freight: 29.4600000000, ShipName: Alfreds Futterkiste, ShipAddress: Obere Str. 57, ShipCity: Berlin, ShipRegion: Western Europe, ShipZip: 12209, ShipCountry: Germany, AmountTotal:  [1086.00-->] 51018.0000000000, Country: None, City: None, Ready: True, OrderDetailCount: 3, CloneFromOrder: None  row: 0x1141c5dd0  session: 0x1141c5910  ins_upd_dlt: upd - 2024-03-03 19:02:42,799 - logic_logger - INFO
+......Customer[ALFKI] {Update - Adjusting Customer: Balance} Id: ALFKI, CompanyName: Alfreds Futterkiste, ContactName: Maria Anders, ContactTitle: Sales Representative, Address: Obere Str. 57A, City: Berlin, Region: Western Europe, PostalCode: 12209, Country: Germany, Phone: 030-0074321, Fax: 030-0076545, Balance:  [2102.0000000000-->] 52034.0000000000, CreditLimit: 2300.0000000000, OrderCount: 15, UnpaidOrderCount: 10, Client_id: 1  row: 0x1141a8a10  session: 0x1141c5910  ins_upd_dlt: upd - 2024-03-03 19:02:42,801 - logic_logger - INFO
+......Customer[ALFKI] {Constraint Failure: balance (52034.00) exceeds credit (2300.00)} Id: ALFKI, CompanyName: Alfreds Futterkiste, ContactName: Maria Anders, ContactTitle: Sales Representative, Address: Obere Str. 57A, City: Berlin, Region: Western Europe, PostalCode: 12209, Country: Germany, Phone: 030-0074321, Fax: 030-0076545, Balance:  [2102.0000000000-->] 52034.0000000000, CreditLimit: 2300.0000000000, OrderCount: 15, UnpaidOrderCount: 10, Client_id: 1  row: 0x1141a8a10  session: 0x1141c5910  ins_upd_dlt: upd - 2024-03-03 19:02:42,801 - logic_logger - INFO
+
+Rules Fired:		## - 2024-03-03 19:02:42,802 - logic_logger - INFO
+  Customer		## - 2024-03-03 19:02:42,802 - logic_logger - INFO
+    1. RowEvent Customer.customer_defaults() 		## - 2024-03-03 19:02:42,802 - logic_logger - INFO
+    2. Derive Customer.OrderCount as Count(<class 'database.models.Order'> Where None)		## - 2024-03-03 19:02:42,802 - logic_logger - INFO
+    3. Constraint Function: None 		## - 2024-03-03 19:02:42,802 - logic_logger - INFO
+    4. Derive Customer.UnpaidOrderCount as Count(<class 'database.models.Order'> Where <function declare_logic.<locals>.<lambda> at 0x1071645e0>)		## - 2024-03-03 19:02:42,802 - logic_logger - INFO
+    5. Derive Customer.Balance as Sum(Order.AmountTotal Where <function declare_logic.<locals>.<lambda> at 0x106ffe700>)		## - 2024-03-03 19:02:42,802 - logic_logger - INFO
+  Order		## - 2024-03-03 19:02:42,802 - logic_logger - INFO
+    6. RowEvent Order.order_defaults() 		## - 2024-03-03 19:02:42,803 - logic_logger - INFO
+    7. Derive Order.AmountTotal as Sum(OrderDetail.Amount Where None)		## - 2024-03-03 19:02:42,803 - logic_logger - INFO
+    8. Derive Order.OrderDetailCount as Count(<class 'database.models.OrderDetail'> Where None)		## - 2024-03-03 19:02:42,803 - logic_logger - INFO
+  OrderDetail		## - 2024-03-03 19:02:42,803 - logic_logger - INFO
+    9. Derive OrderDetail.Amount as Formula (1): as_expression=lambda row: row.UnitPrice * row.Qua [...]		## - 2024-03-03 19:02:42,803 - logic_logger - INFO
+    10. RowEvent OrderDetail.order_detail_defaults() 		## - 2024-03-03 19:02:42,804 - logic_logger - INFO
