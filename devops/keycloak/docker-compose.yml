@@ -15,5 +15,8 @@ services:
     environment:
         - KEYCLOAK_ADMIN=admin
         - KEYCLOAK_ADMIN_PASSWORD=password
-#    networks:
-#      - dev-network
+    networks: 
+        - dev-network
+networks: 
+    dev-network: 
+        external: true 
