@@ -53,6 +53,10 @@ class Authentication_Provider(Abstract_Authentication_Provider):
         flask_app.config["JWT_PUBLIC_KEY"] = \
             Authentication_Provider.get_jwt_pubkey()
         flask_app.config['JWT_ALGORITHM'] = 'RS256'
+        do_priv_key = False
+        if do_priv_key:
+            flask_app.config["JWT_PRIVATE_KEY"] = \
+                Authentication_Provider.get_jwt_pubkey()
         return
 
 
@@ -99,6 +103,13 @@ class Authentication_Provider(Abstract_Authentication_Provider):
 
                 * Row Caution: https://docs.sqlalchemy.org/en/14/errors.html#error-bhk3
         """
+        global g_flask_app
+        from flask_jwt_extended import JWTManager
+        from flask_jwt_extended import create_access_token
+        from flask import jsonify
+        import requests  # not working - 404
+        import json
+        from config.config import Args
 
         def row_to_dotmap(row, row_class):
             rtn_dotmap = UserAndRoles() 
@@ -119,18 +130,12 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             #return user
         logger.info(f'*****\nauth_provider: User: {user}\n*****\n')
         # get user / roles from kc
-        try_kc = 'api'  # enables us to turn off experimental code
+        try_kc = 'jwt'  # enables us to turn off experimental code
         if try_kc == 'jwt':
             """ To retrieve user info from the jwt, you may want to look into these functions:
-
             https://flask-jwt-extended.readthedocs.io/en/stable/automatic_user_loading.html
             as used in security/system/authentication.py 
             """
-            global g_flask_app
-            from flask_jwt_extended import JWTManager
-            from flask_jwt_extended import create_access_token
-            from flask import jsonify
-
             user = {"id": id, "password": password}  # is this == kwargs?
             user_identity = UserAndRoles()
             user_identity.id = id
@@ -146,9 +151,6 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             # Make sure all imports, decorators, functions, etc. needed to set up the application are done before running it.
 
         elif try_kc == 'api':  # get jwt for user info & roles
-            import requests  # not working - 404
-            import json
-            from config.config import Args
             KC_BASE = 'http://localhost:8080/realms/kcals'
             KC_BASE = Args.instance.keycloak_base
             data = {
