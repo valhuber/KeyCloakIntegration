@@ -1,10 +1,13 @@
 # Integration: ApiLogicServer + Keycloak
 
-## Info
-
 This repo contains a demo for apilogicserver integration with keycloak oidc JWT authentication.  It is an attempt to integrate this more natively into API Logic Server.
 
-Status: not running.  See screen shot.
+Status - 3/7:
+
+1. able to access keycloak for login using modified sra at localhost.
+2. not able to obtain jwt data for roles/authorization
+
+&nbsp;
 
 ## Run:
 ```
@@ -15,6 +18,8 @@ docker-compose up
 This will run keycloak on the docker host:
 - keycloak (http://localhost:8080) 
     - use admin, password
+
+&nbsp;
 
 ## Test:
 
@@ -61,6 +66,8 @@ Use first Run Config.
 
 * If possible, I'd like to simplify setup, and make debugging easier, so trying to run the app natively.
 
+&nbsp;
+
 ## Adapted Implementation
 
 Several changes to adapt the original poc to API Logic Server structure:
@@ -96,55 +103,41 @@ JWT validation is implemented in [projects/KCALS/security/system/authentication.
 
 By default, apilogicserver authentication uses a user database. Our users are defined in keycloak however. I had to change [auth_provider.py](auth_provider.py) for this to (kinda) work.
 
-### Change Summary
-
-You can search for #val.
-
-***Ignore the rest of this.***
-
-This may not be complete - let's fix it:
-
-| File | Notes   |
-:-------|:-----------|
-| config/config.py | kafka_producer property - code cleanup?? |
-| security/authentication_provider/sql/auth_provider.py | get_user() - remove try, use 1st user if none (as a temp hack?)<br>Move to security/authentication_provider/kycloak/auth_provider?  |
-| security/system/authentication.py | get_jwt_pubkey(): keycloak integration<br>configure_auth() pub key & algorithm settings |
-
+&nbsp;
 
 ## React-Admin
 
 Nginx is used to host the safrs-react-admin frontend at http://localhost/admin-app .
 
-## Misc Notes
+&nbsp;
 
-Unclear why keycloak did not become a security/authentication_provider/kycloak/auth_provider?  I presume that would be the direction to go...?
+## Persisting Keycloak Data
 
-    Then, `ApiLogicServer add-auth --db_url=keycloak` activates the config to use this.
-        Or, `ApiLogicServer add-auth --provider=keycloak` since there is really no db
+keycloak data is stored inside the keycloak container in /opt/keycloak/data .
+To make this persistent, you should mount this volume. Currently, only the "import" folder is mounted.
+This import folder contains json files exported by me. These json files are imported when the container starts with the " --import-realm" command line switch ( https://www.keycloak.org/server/importExport )
 
-    And, move the settings and get_jwt_pubkey() to the provider...?
+You can try this:
 
-    In system/authentication, what causes the keycloak code to be used?  JWT_ALGORITHM setting?
+```bash
+$ mkdir data
+$ mv import data # the import folder containing the json files
+$ chmod 777 data # make sure the container keycloak user can write to this folder
+```
 
-    What is KCALS/auth_provider.py?  vs the one in the project...
+Then, change the docker-compose keycloak volumes to:
 
-    Presume sql models, database are not required, just came with activation?
+    volumes:
+        - $PWD/data:/opt/keycloak/data
 
-Where is the keycloak data stored?  In the image?  So it's lost on restart?
+This way, the /opt/keycloak/data will remain on the docker host mounted directory ($PWD/data)
 
-I like the idea of not requiring image creation first - just docker compose from local files.  We will need to doc both, maybe as comments in the compose...
+&nbsp;
 
-Can the keycloak stuff be moved into a devops directory (imports, compose)?
+## Accessing the jwt at runtime
 
-Does KeyCloak Admin provide a way to see the password?
+To retrieve user info from the jwt, you may want to look into these functions:
+https://flask-jwt-extended.readthedocs.io/en/stable/automatic_user_loading.html
+as used in security/system/authentication.py
 
-Can we have a native app in addition to docker-app?
-
-
-## WIP
-
-1. added devops/keycloak
-2. config - keycloak/auth_provider
-3. added security/authentication_provider/keycloak/auth_provider.py
-    * with attempted get_jwt_pubkey (and configs) from security/system/authentication.py
-        * can authentication call this for initialization?
+&nbsp;

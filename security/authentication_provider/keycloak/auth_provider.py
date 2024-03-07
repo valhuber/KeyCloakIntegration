@@ -31,13 +31,13 @@ class UserAndRoles(DotMap):
         # print(password)
         return password == self.password_hash
 
+g_flask_app = None
 
 class Authentication_Provider(Abstract_Authentication_Provider):
 
     @staticmethod  #val - option for auth provider setup
     def configure_auth(flask_app: Flask):
-        """
-        Called on server start by api_logic_server_run -> authentication.py to 
+        """ Called oauthentication.py on server start, to 
         - initialize jwt
         - establish Flask end points for login.
 
@@ -48,6 +48,8 @@ class Authentication_Provider(Abstract_Authentication_Provider):
         Returns:
             _type_: (no return)
         """
+        global g_flask_app
+        g_flask_app = flask_app
         flask_app.config["JWT_PUBLIC_KEY"] = \
             Authentication_Provider.get_jwt_pubkey()
         flask_app.config['JWT_ALGORITHM'] = 'RS256'
@@ -81,8 +83,7 @@ class Authentication_Provider(Abstract_Authentication_Provider):
 
     @staticmethod
     def get_user(id: str, password: str = "") -> object:
-        """
-        Must return a row object or UserAndRole(DotMap) with attributes:
+        """ Must return a row object or UserAndRole(DotMap) with attributes:
 
         * name
 
@@ -117,9 +118,31 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             user = session.query(authentication_models.User).first()
             #return user
         logger.info(f'*****\nauth_provider: User: {user}\n*****\n')
-        try_kc = True  # enables us to turn off experimental code
-        if try_kc:
-            import requests
+        # get user / roles from kc
+        try_kc = 'jwt'  # enables us to turn off experimental code
+        if try_kc == 'jwt':
+            """ To retrieve user info from the jwt, you may want to look into these functions:
+
+            https://flask-jwt-extended.readthedocs.io/en/stable/automatic_user_loading.html
+            as used in security/system/authentication.py 
+            """
+            global g_flask_app
+            from flask_jwt_extended import JWTManager
+            from flask_jwt_extended import create_access_token
+            from flask import jsonify
+
+            user = {id: id, password: password}  # is this == kwargs?
+            access_token = create_access_token(identity=id)
+            # now decode for user/roles info; also see jwt.io
+            jswon_jwt = jsonify(access_token=user)  # this returns something; as far as I got  FIXME
+            pass 
+
+            # jwt = JWTManager(g_flask_app)  # can't use this...
+            # fails with: AssertionError: The setup method 'errorhandler' can no longer be called on the application. It has already handled its first request, any changes will not be applied consistently.
+            # Make sure all imports, decorators, functions, etc. needed to set up the application are done before running it.
+
+        elif try_kc == 'api':  # get jwt for user info & roles
+            import requests  # not working - 404
             args = f"grant_type=password&client_id=alsclient&username={id}&password={password}"
             msg_url = f'http://localhost:8080/realms/kcals/protocol/openid-connect/token?{args}'
             r = requests.get(msg_url)
