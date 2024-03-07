@@ -148,7 +148,9 @@ class Authentication_Provider(Abstract_Authentication_Provider):
         elif try_kc == 'api':  # get jwt for user info & roles
             import requests  # not working - 404
             import json
+            from config.config import Args
             KC_BASE = 'http://localhost:8080/realms/kcals'
+            KC_BASE = Args.instance.keycloak_base
             data = {
                 "grant_type": "password",
                 "client_id": "alsclient",
