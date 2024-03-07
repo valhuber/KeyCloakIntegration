@@ -119,7 +119,7 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             #return user
         logger.info(f'*****\nauth_provider: User: {user}\n*****\n')
         # get user / roles from kc
-        try_kc = 'jwt'  # enables us to turn off experimental code
+        try_kc = 'api'  # enables us to turn off experimental code
         if try_kc == 'jwt':
             """ To retrieve user info from the jwt, you may want to look into these functions:
 
@@ -143,10 +143,20 @@ class Authentication_Provider(Abstract_Authentication_Provider):
 
         elif try_kc == 'api':  # get jwt for user info & roles
             import requests  # not working - 404
-            args = f"grant_type=password&client_id=alsclient&username={id}&password={password}"
-            msg_url = f'http://localhost:8080/realms/kcals/protocol/openid-connect/token?{args}'
-            r = requests.get(msg_url)
-            pass
+            import json
+            KC_BASE = 'http://localhost:8080/realms/kcals'
+            data = {
+                "grant_type": "password",
+                "client_id": "alsclient",
+                "username" :f"{id}",
+                "password": f"{password}"
+            }
+            msg_url = f'{KC_BASE}/.well-known/openid-configuration'
+            resp = requests.post(msg_url, data)
+            if resp.status_code == 200:
+                resp_data = json.loads(resp.text)
+                access_token = resp_data["access_token"]
+                return jsonify(access_token=access_token)
 
         use_db_row = True  # prior version did not return class with check_password; now fixed
         if use_db_row:

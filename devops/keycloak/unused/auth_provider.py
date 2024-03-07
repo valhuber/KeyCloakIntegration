@@ -60,7 +60,7 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             db = safrs.DB         # Use the safrs.DB for database access
             session = db.session  # sqlalchemy.orm.scoping.scoped_session
 
-        user = session.query(authentication_models.User).filter(authentication_models.User.id == id).one_or_none()
+        user = session.query(authentication_models.User).filter(authentication_models.User.id  == id).one_or_none()
         if user is None:
             logger.info(f'*****\nauth_provider: Create user for: {id}\n*****\n')
             user = session.query(authentication_models.User).first()
