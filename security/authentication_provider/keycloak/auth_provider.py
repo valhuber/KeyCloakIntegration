@@ -75,13 +75,14 @@ class Authentication_Provider(Abstract_Authentication_Provider):
         else:
             print(f'Failed to load jwks_uri {jwks_uri}')
             sys.exit(1)
-        return RSAAlgorithm.from_jwk(json.dumps(oidc_jwks_uri["keys"][1]))
+        return_result = RSAAlgorithm.from_jwk(json.dumps(oidc_jwks_uri["keys"][1]))
+        return return_result
 
 
     @staticmethod
     def get_user(id: str, password: str = "") -> object:
         """
-        Must return a row object with attributes:
+        Must return a row object or UserAndRole(DotMap) with attributes:
 
         * name
 
@@ -116,7 +117,15 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             user = session.query(authentication_models.User).first()
             #return user
         logger.info(f'*****\nauth_provider: User: {user}\n*****\n')
-        use_db_row = True
+        try_kc = True  # enables us to turn off experimental code
+        if try_kc:
+            import requests
+            args = f"grant_type=password&client_id=alsclient&username={id}&password={password}"
+            msg_url = f'http://localhost:8080/realms/kcals/protocol/openid-connect/token?{args}'
+            r = requests.get(msg_url)
+            pass
+
+        use_db_row = True  # prior version did not return class with check_password; now fixed
         if use_db_row:
             return user
         else:

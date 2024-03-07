@@ -18,17 +18,21 @@ This will run keycloak on the docker host:
 
 ## Test:
 
-### 1. Initialize keycloak 
+### 1. Keycloak Unit Test
+
+Verify keycloak login with demo, demo
 
 ```bash
 # keycloak realm named "kcals"
 KC_BASE=http://localhost:8080/realms/kcals
 
-# oidc token endpoint
+echo "\n\noidc token endpoint"
 TOKEN_ENDPOINT=$(curl ${KC_BASE}/.well-known/openid-configuration | jq -r .token_endpoint)
+echo "TOKEN_ENDPOINT: ${TOKEN_ENDPOINT} \n"
 
-# retrieve an access token by logging in 
+echo "retrieve an access token by logging in "
 TOKEN=$(curl ${TOKEN_ENDPOINT} -d 'grant_type=password&client_id=alsclient' -d 'username=demo' -d 'password=demo' | jq -r .access_token)
+echo "TOKEN: ${TOKEN} \n"
 
 # test the authentication
 curl http://localhost:5656/api/Category -H "Authorization: Bearer ${TOKEN}" | jq .
@@ -57,9 +61,9 @@ Use first Run Config.
 
 * If possible, I'd like to simplify setup, and make debugging easier, so trying to run the app natively.
 
-## Attempted Implementation
+## Adapted Implementation
 
-Several changes:
+Several changes to adapt the original poc to API Logic Server structure:
 
 1. **Keycloak Provider:** Moved `security/authentication_provider/sql/auth_provider` to its own dir: `security/authentication_provider/keycloak/auth_provider`
     * Moved the settings and `get_jwt_pubkey` to there
