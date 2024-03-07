@@ -131,10 +131,14 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             from flask_jwt_extended import create_access_token
             from flask import jsonify
 
-            user = {id: id, password: password}  # is this == kwargs?
-            access_token = create_access_token(identity=id)
+            user = {"id": id, "password": password}  # is this == kwargs?
+            user_identity = UserAndRoles()
+            user_identity.id = id
+            user_identity.password = password
+            # FIXME fails: JWT_PRIVATE_KEY must be set to use asymmetric cryptography algorithm "RS256"
+            access_token = create_access_token(identity=user_identity)
             # now decode for user/roles info; also see jwt.io
-            jswon_jwt = jsonify(access_token=user)  # this returns something; as far as I got  FIXME
+            jswon_jwt = jsonify(access_token=user)  # this returns something with SQLAlchemy row
             pass 
 
             # jwt = JWTManager(g_flask_app)  # can't use this...

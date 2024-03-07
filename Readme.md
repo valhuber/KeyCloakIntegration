@@ -86,6 +86,12 @@ Several changes to adapt the original poc to API Logic Server structure:
 
 ![Attempt](images/integrate-keycloak.png)
 
+### Inspecting Access Tokens
+
+You can usejwt.io:
+
+![jwt.io](images/jwt.io.png)
+
 
 ## Initial Implementation (for reference)
 
