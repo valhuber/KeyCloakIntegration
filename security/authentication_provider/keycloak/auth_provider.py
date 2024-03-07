@@ -132,7 +132,7 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             from flask import jsonify
 
             user = {id: id, password: password}  # is this == kwargs?
-            access_token = create_access_token(identity=id)
+            access_token = create_access_token(identity=user)
             # now decode for user/roles info; also see jwt.io
             jswon_jwt = jsonify(access_token=user)  # this returns something; as far as I got  FIXME
             pass 
