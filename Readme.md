@@ -15,9 +15,8 @@ cd devops/keycloak
 docker-compose up
 ```
 
-This will run keycloak on the docker host:
+This will run keycloak on the docker host (use admin, password):
 - keycloak (http://localhost:8080) 
-    - use admin, password
 
 &nbsp;
 
@@ -44,22 +43,6 @@ curl http://localhost:5656/api/Category -H "Authorization: Bearer ${TOKEN}" | jq
 
 ```
 
-Aside - can use this as bearer... jwt.io will decode it
-
-```python
-data = {
-            "grant_type": "password",
-            "client_id": "alsclient",
-            "username" :f"{username}",
-            "password": f"{password}"
-        }
-        resp = requests.post(f"{TOKEN_ENDPOINT}", data)
-        if resp.status_code == 200:
-            resp_data = json.loads(resp.text)
-            access_token = resp_data["access_token"]
-            return jsonify(access_token=access_token)
-```
-
 ### 2. Start APP Logic Server
 
 Use first Run Config.
@@ -72,16 +55,18 @@ Use first Run Config.
 
 Several changes to adapt the original poc to API Logic Server structure:
 
-1. **Keycloak Provider:** Moved `security/authentication_provider/sql/auth_provider` to its own dir: `security/authentication_provider/keycloak/auth_provider`
-    * Moved the settings and `get_jwt_pubkey` to there
-    * This centralizes all the keycloak elements in 1 place
+1. Updated `security/system/authentication.py` 
+    * Call a new `configure_auth` function in the Keycloak Provider
+    * Pass jwt_data to `get_user(identity, jwt_data)` (arg 2, instead of password)
+    * This removes dependency on this file to provider type.
+2. Introduced `security/authentication_provider/keycloak/auth_provider`
+    * Moved the settings and `get_jwt_public_key` to there
+    * This centralizes all the keycloak elements into its provider
     * There is a `config/config.py` setting to activate the Keycloak Provider.
         * This will later be a CLI command.
-2. Updated `security/system/authentication.py` call a new `configure_auth` function in the Keycloak Provider.
-    * This removes dependency on this file to provider type.
 3. Added the docker compose material (including imports) to the `devops` dir
 4. Note **interim SRA** is included in `ui/safrs-react-admin`
-5. To login, see the `Auth` object in the admin app
+5. To login, see the `Auth` object in the admin app: demo, demo
 
 
 ![Attempt](images/integrate-keycloak.png)
@@ -108,12 +93,6 @@ For users to be able to authenticate with JWTs signed by keycloak, we have to do
 JWT validation is implemented in [projects/KCALS/security/system/authentication.py](projects/KCALS/security/system/authentication.py). 
 
 By default, apilogicserver authentication uses a user database. Our users are defined in keycloak however. I had to change [auth_provider.py](auth_provider.py) for this to (kinda) work.
-
-## Getting the jwt
-
-Presuming the correct approach is by-id (not by create_access_token(identity=user_identity)), we are still failing:
-
-![jwt-post-failing](images/jwt-post-failing.png)
 
 &nbsp;
 
@@ -146,10 +125,27 @@ This way, the /opt/keycloak/data will remain on the docker host mounted director
 
 &nbsp;
 
-## Accessing the jwt at runtime
+## Notes: Accessing the jwt at runtime
 
 To retrieve user info from the jwt, you may want to look into these functions:
 https://flask-jwt-extended.readthedocs.io/en/stable/automatic_user_loading.html
 as used in security/system/authentication.py
 
+## Saved snippet
+
+Aside - can use this as bearer... jwt.io will decode it
+
+```python
+data = {
+            "grant_type": "password",
+            "client_id": "alsclient",
+            "username" :f"{username}",
+            "password": f"{password}"
+        }
+        resp = requests.post(f"{TOKEN_ENDPOINT}", data)
+        if resp.status_code == 200:
+            resp_data = json.loads(resp.text)
+            access_token = resp_data["access_token"]
+            return jsonify(access_token=access_token)
+```
 &nbsp;

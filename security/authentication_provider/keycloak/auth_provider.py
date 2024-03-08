@@ -39,7 +39,8 @@ class ALSError(JsonapiError):
         self.status_code = status_code
 
 
-class UserAndRoles(DotMap):
+class DotMapX(DotMap):
+    """ DotMap, with extended support for auth providers """
     def check_password(self, password=None):
         # print(password)
         return password == self.password_hash
@@ -60,7 +61,7 @@ class Authentication_Provider(Abstract_Authentication_Provider):
         Returns:
             _type_: (no return)
         """
-        flask_app.config["JWT_PUBLIC_KEY"] = Authentication_Provider.get_jwt_pubkey()
+        flask_app.config["JWT_PUBLIC_KEY"] = Authentication_Provider.get_jwt_public_key()
         flask_app.config['JWT_ALGORITHM'] = 'RS256'
         do_priv_key = False
         if do_priv_key:
@@ -69,7 +70,7 @@ class Authentication_Provider(Abstract_Authentication_Provider):
         return
 
     @staticmethod
-    def get_jwt_pubkey():
+    def get_jwt_public_key():
         from flask import jsonify, request
         #jwks_uri = 'https://kc.hardened.be/realms/master/protocol/openid-connect/certs'
         # TODO use env variable instead of localhost
@@ -114,20 +115,18 @@ class Authentication_Provider(Abstract_Authentication_Provider):
 
         Returns:
             object: row object is a SQLAlchemy row
-        """
-        
+        """        
         from config.config import Args  # circular import error if at top
-
-        global db, session
-        def row_to_dotmap(row, row_class):
-            rtn_dotmap = UserAndRoles() 
-            mapper = inspect(row_class)
-            for each_column in mapper.columns:
-                rtn_dotmap[each_column.name] = getattr(row, each_column.name)
-            return rtn_dotmap
         
         use_db = False
         if use_db: # old code - get user info from sqlite db
+            global db, session
+            def row_to_dotmap(row, row_class):
+                rtn_dotmap = DotMapX() 
+                mapper = inspect(row_class)
+                for each_column in mapper.columns:
+                    rtn_dotmap[each_column.name] = getattr(row, each_column.name)
+                return rtn_dotmap
             if db is None:
                 db = safrs.DB         # Use the safrs.DB for database access
                 session = db.session  # sqlalchemy.orm.scoping.scoped_session
@@ -158,7 +157,7 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             as used in security/system/authentication.py 
             """
             user = {"id": id, "password": password}  # is this == kwargs?
-            user_identity = UserAndRoles()
+            user_identity = DotMapX()
             user_identity.id = id
             user_identity.password = password
             # FIXME fails: JWT_PRIVATE_KEY must be set to use asymmetric cryptography algorithm "RS256"
@@ -199,7 +198,7 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             if use_fn:
                 rtn_user = Authentication_Provider.get_user_from_jwt(jwt_data)
                 return rtn_user
-            rtn_user = UserAndRoles()
+            rtn_user = DotMapX()
             rtn_user.client_id = 1  # hack until user data in place
             rtn_user.name =jwt_data["preferred_username"]
             rtn_user.password_hash = None
@@ -208,10 +207,10 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             role_names = jwt_data["realm_access"]["roles"]
             # role_names.append("customer") #Temp role for testing
             for each_role_name in role_names:
-                each_user_role = UserAndRoles()
+                each_user_role = DotMapX()
                 each_user_role.role_name = each_role_name
                 rtn_user.UserRoleList.append(each_user_role)
-            customer_role = UserAndRoles()
+            customer_role = DotMapX()
             customer_role.role_name = 'customer'
             rtn_user.UserRoleList.append(customer_role)  # hack until user data in place
             return rtn_user
