@@ -86,33 +86,6 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             sys.exit(1)
         return_result = RSAAlgorithm.from_jwk(json.dumps(oidc_jwks_uri["keys"][1]))
         return return_result  # is this an rsa-aware callback??   It's not a jwt
-    
-    @staticmethod
-    def get_user_from_jwt(data) -> any:  # unused
-        
-        def row_to_dotmap(row, row_class):
-            rtn_dotmap = UserAndRoles() 
-            mapper = inspect(row_class)
-            for each_column in mapper.columns:
-                rtn_dotmap[each_column.name] = getattr(row, each_column.name)
-            return rtn_dotmap
-        
-        name = data["preferred_username"]
-        user = authentication_models.User(id=name)
-        user.client_id = 1
-        user.password_hash = None
-        role_names = data["realm_access"]["roles"]
-        role_names.append("customer") #Temp role for testing
-        user_role = authentication_models.UserRole(user_id=name,role_name="customer")
-        rtn_user = row_to_dotmap(user, authentication_models.User)
-        rtn_user.UserRoleList = []
-        #user_roles = getattr(user, "UserRoleList")
-        for each_row in role_names:
-            each_user_role = row_to_dotmap(user_role, authentication_models.UserRole)
-            each_user_role["role_name"] = each_row
-            rtn_user.UserRoleList.append(each_user_role)
-
-        return rtn_user
         
     # @jwt_required   # so, maybe jwt requires no pwd?
     def get_jwt_user(id: str) -> object:  # for experiment: jwt_get_raw_jwt
