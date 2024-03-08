@@ -19,6 +19,7 @@ import json
 import sys
 import time
 from jwt.algorithms import RSAAlgorithm
+from flask import g
 
 
 # **********************
@@ -98,11 +99,24 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             print(f'Failed to load jwks_uri {jwks_uri}')
             sys.exit(1)
         return_result = RSAAlgorithm.from_jwk(json.dumps(oidc_jwks_uri["keys"][1]))
-        return return_result
+        g.als_jwt = return_result
+        g_debug = g
+        return return_result  # is this an rsa-aware callback?   It's not a jwt
 
-    @jwt_required   # so, maybe jwt requires no pwd?
+    # @jwt_required   # so, maybe jwt requires no pwd?
     def get_jwt_user(id: str) -> object:
-        raw_jwt = flask_jwt_extended.get_jwt()  # You must call `@jwt_required()` or `verify_jwt_in_request()` before using this method
+        from flask_jwt_extended import get_jwt
+        from flask import has_request_context
+        
+        return_jwt = None
+        if has_request_context():
+            # flask_jwt_extended.verify_jwt_in_request()  # blows stack; if omitted, following fails
+            # return_jwt = raw_jwt = flask_jwt_extended.get_jwt()  # You must call `@jwt_required()` or `verify_jwt_in_request()` before using this method
+            request_global_debug = g
+            return_jwt = g.als_jwt  # it's not set, lost since different request??
+        else:
+            pass  # TODO - what to do here?
+        return return_jwt
 
     # @jwt_required   # takes 1 positional argument but 2 were given
     @staticmethod
@@ -140,7 +154,7 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             #return user
         logger.info(f'*****\nauth_provider: User: {user}\n*****\n')
         # get user / roles  from kc
-        try_kc = 'jwt_get_raw_jwt'  # enables us to turn off experimental code
+        try_kc = 'api'  # enables us to turn off experimental code
         if try_kc == 'jwt_create':
             """ To retrieve user info from the jwt, you may want to look into these functions:
             https://flask-jwt-extended.readthedocs.io/en/stable/automatic_user_loading.html
