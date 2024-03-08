@@ -26,15 +26,6 @@ from flask import g
 # keycloak auth provider
 # **********************
 
-def jwt_required(*args, **kwargs):
-    from flask import request
-    _jwt_required_ori = jwt_required_ori(*args, **kwargs)
-    def _wrapper(fn):
-        if request.endpoint == 'api.authentication-User.login':
-            return fn
-        return _jwt_required_ori(fn)
-    return _wrapper
-
 db = None
 session = None
 
@@ -53,13 +44,12 @@ class UserAndRoles(DotMap):
         # print(password)
         return password == self.password_hash
 
-g_flask_app = None
 
 class Authentication_Provider(Abstract_Authentication_Provider):
 
     @staticmethod  #val - option for auth provider setup
     def configure_auth(flask_app: Flask):
-        """ Called oauthentication.py on server start, to 
+        """ Called by authentication.py on server start, to 
         - initialize jwt
         - establish Flask end points for login.
 
@@ -70,10 +60,7 @@ class Authentication_Provider(Abstract_Authentication_Provider):
         Returns:
             _type_: (no return)
         """
-        global g_flask_app
-        g_flask_app = flask_app
-        flask_app.config["JWT_PUBLIC_KEY"] = \
-            Authentication_Provider.get_jwt_pubkey()
+        flask_app.config["JWT_PUBLIC_KEY"] = Authentication_Provider.get_jwt_pubkey()
         flask_app.config['JWT_ALGORITHM'] = 'RS256'
         do_priv_key = False
         if do_priv_key:
@@ -81,9 +68,8 @@ class Authentication_Provider(Abstract_Authentication_Provider):
                 Authentication_Provider.get_jwt_pubkey()
         return
 
-
-    @staticmethod  #val - option for auth provider setup
-    def get_jwt_pubkey():  #val changed to use keycloak
+    @staticmethod
+    def get_jwt_pubkey():
         from flask import jsonify, request
         #jwks_uri = 'https://kc.hardened.be/realms/master/protocol/openid-connect/certs'
         # TODO use env variable instead of localhost
@@ -99,12 +85,10 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             print(f'Failed to load jwks_uri {jwks_uri}')
             sys.exit(1)
         return_result = RSAAlgorithm.from_jwk(json.dumps(oidc_jwks_uri["keys"][1]))
-        g.als_jwt = return_result
-        g_debug = g
-        return return_result  # is this an rsa-aware callback?   It's not a jwt
+        return return_result  # is this an rsa-aware callback??   It's not a jwt
     
     @staticmethod
-    def get_user_from_jwt(data) -> any:
+    def get_user_from_jwt(data) -> any:  # unused
         
         def row_to_dotmap(row, row_class):
             rtn_dotmap = UserAndRoles() 
@@ -131,7 +115,7 @@ class Authentication_Provider(Abstract_Authentication_Provider):
         return rtn_user
         
     # @jwt_required   # so, maybe jwt requires no pwd?
-    def get_jwt_user(id: str) -> object:
+    def get_jwt_user(id: str) -> object:  # for experiment: jwt_get_raw_jwt
         from flask_jwt_extended import get_jwt
         from flask import has_request_context
         
@@ -145,7 +129,6 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             pass  # TODO - what to do here?
         return return_jwt
 
-    # @jwt_required   # takes 1 positional argument but 2 were given
     @staticmethod
     def get_user(id: str, password: str = "") -> object:
         """ Must return a row object or UserAndRole(DotMap) with attributes:
@@ -154,7 +137,7 @@ class Authentication_Provider(Abstract_Authentication_Provider):
 
         Args:
             id (str): the user login id
-            password (str, optional): _description_. Defaults to "".
+            password (str, optional): for keycloak, there is no password, so use this for jwt_data.
 
         Returns:
             object: row object is a SQLAlchemy row
@@ -162,7 +145,7 @@ class Authentication_Provider(Abstract_Authentication_Provider):
         
         from config.config import Args  # circular import error if at top
 
-        global g_flask_app, db, session
+        global db, session
         def row_to_dotmap(row, row_class):
             rtn_dotmap = UserAndRoles() 
             mapper = inspect(row_class)
@@ -171,7 +154,7 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             return rtn_dotmap
         
         use_db = False
-        if use_db:
+        if use_db: # old code - get user info from sqlite db
             if db is None:
                 db = safrs.DB         # Use the safrs.DB for database access
                 session = db.session  # sqlalchemy.orm.scoping.scoped_session
@@ -182,8 +165,20 @@ class Authentication_Provider(Abstract_Authentication_Provider):
                 user = session.query(authentication_models.User).first()
                 return user
             logger.info(f'*****\nauth_provider: User: {user}\n*****\n')
+            use_db_row = True  # prior version did not return class with check_password; now fixed
+            if use_db_row:
+                return user
+            else:
+                pass
+                rtn_user = row_to_dotmap(user, authentication_models.User)
+                rtn_user.UserRoleList = []
+                user_roles = getattr(user, "UserRoleList")
+                for each_row in user_roles:
+                    each_user_role = row_to_dotmap(each_row, authentication_models.UserRole)
+                    rtn_user.UserRoleList.append(each_user_role)
+                return rtn_user  # returning user fails per caution above
         # get user / roles  from kc
-        try_kc = 'g'  # enables us to turn off experimental code
+        try_kc = 'authentication#user_lookup_callback'  # activate favorite experiment
         if try_kc == 'jwt_create':
             """ To retrieve user info from the jwt, you may want to look into these functions:
             https://flask-jwt-extended.readthedocs.io/en/stable/automatic_user_loading.html
@@ -223,21 +218,27 @@ class Authentication_Provider(Abstract_Authentication_Provider):
                 # no no access_token = resp_data["access_token"]
                 # instead, create user/roles UserRoleList, caller will create jwt
                 return jsonify(access_token=access_token)
-        elif try_kc == 'g':
-            from flask import g
-            jwt_data = g.jwt_data
-            return Authentication_Provider.get_user_from_jwt(jwt_data)
-            
+        elif try_kc == 'authentication#user_lookup_callback':
+            # from flask import g
+            # jwt_data = g.jwt_data  # saved in authentication#user_lookup_callback()
+            jwt_data : dict = password
+            use_fn = False
+            if use_fn:
+                rtn_user = Authentication_Provider.get_user_from_jwt(jwt_data)
+                return rtn_user
+            rtn_user = UserAndRoles()
+            rtn_user.client_id = 1  # hack until user data in place
+            rtn_user.name =jwt_data["preferred_username"]
+            rtn_user.password_hash = None
 
-        use_db_row = True  # prior version did not return class with check_password; now fixed
-        if use_db_row:
-            return user
-        else:
-            pass
-            rtn_user = row_to_dotmap(user, authentication_models.User)
             rtn_user.UserRoleList = []
-            user_roles = getattr(user, "UserRoleList")
-            for each_row in user_roles:
-                each_user_role = row_to_dotmap(each_row, authentication_models.UserRole)
+            role_names = jwt_data["realm_access"]["roles"]
+            # role_names.append("customer") #Temp role for testing
+            for each_role_name in role_names:
+                each_user_role = UserAndRoles()
+                each_user_role.role_name = each_role_name
                 rtn_user.UserRoleList.append(each_user_role)
-            return rtn_user  # returning user fails per caution above
+            customer_role = UserAndRoles()
+            customer_role.role_name = 'customer'
+            rtn_user.UserRoleList.append(customer_role)  # hack until user data in place
+            return rtn_user
