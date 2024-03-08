@@ -115,7 +115,10 @@ class Authentication_Provider(Abstract_Authentication_Provider):
         
         name = data["preferred_username"]
         user = authentication_models.User(id=name)
-        #roles = authentication_models.Role(name="customer")
+        user.client_id = 1
+        user.password_hash = None
+        #role_names = data["realm_access"]["roles"]
+
         user_role = authentication_models.UserRole(user_id=name,role_name="customer")
         rtn_user = row_to_dotmap(user, authentication_models.User)
         rtn_user.UserRoleList = []
