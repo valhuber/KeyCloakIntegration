@@ -45,14 +45,15 @@ DefaultRolePermission(to_role = Roles.tenant, can_read=True, can_delete=True)
 DefaultRolePermission(to_role = Roles.renter, can_read=True, can_delete=False)
 DefaultRolePermission(to_role = Roles.manager, can_read=True, can_delete=False)
 DefaultRolePermission(to_role = Roles.sales, can_read=True, can_delete=False)
+DefaultRolePermission(to_role=Roles.customer, can_read=True, can_update=True)
 
 GlobalFilter(   global_filter_attribute_name = "Client_id",  # try customers & categories for u1 vs u2
-                roles_not_filtered = ["sa"],
+                roles_not_filtered = ["sa","customer"],
                 filter = '{entity_class}.Client_id == Security.current_user().client_id')
 
 
 GlobalFilter(   global_filter_attribute_name = "SecurityLevel",  # filters Department 'Eng Area 54'
-                roles_not_filtered = ["sa", "manager"],
+                roles_not_filtered = ["sa", "manager","customer"],
                 filter = '{entity_class}.SecurityLevel == 0')
 
 #############################################

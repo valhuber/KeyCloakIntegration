@@ -102,7 +102,29 @@ class Authentication_Provider(Abstract_Authentication_Provider):
         g.als_jwt = return_result
         g_debug = g
         return return_result  # is this an rsa-aware callback?   It's not a jwt
-
+    
+    @staticmethod
+    def get_user_from_jwt(data) -> any:
+        
+        def row_to_dotmap(row, row_class):
+            rtn_dotmap = UserAndRoles() 
+            mapper = inspect(row_class)
+            for each_column in mapper.columns:
+                rtn_dotmap[each_column.name] = getattr(row, each_column.name)
+            return rtn_dotmap
+        
+        name = data["preferred_username"]
+        user = authentication_models.User(id=name)
+        #roles = authentication_models.Role(name="customer")
+        user_role = authentication_models.UserRole(user_id=name,role_name="customer")
+        rtn_user = row_to_dotmap(user, authentication_models.User)
+        rtn_user.UserRoleList = []
+        #user_roles = getattr(user, "UserRoleList")
+        #for each_row in user_roles:
+        each_user_role = row_to_dotmap(user_role, authentication_models.UserRole)
+        rtn_user.UserRoleList.append(each_user_role)
+        return rtn_user
+        
     # @jwt_required   # so, maybe jwt requires no pwd?
     def get_jwt_user(id: str) -> object:
         from flask_jwt_extended import get_jwt
