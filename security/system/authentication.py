@@ -100,9 +100,12 @@ def configure_auth(flask_app: Flask, database: object, method_decorators: list[o
 
     @jwt.user_lookup_loader
     def user_lookup_callback(_jwt_header, jwt_data):
-        #identity = jwt_data["sub"]
+        identity = jwt_data["sub"]
         #username = jwt_data["preferred_username"]
-        return authentication_provider.get_user_from_jwt(jwt_data)
+        from flask import g
+        g.jwt_data = jwt_data
+        #return authentication_provider.get_user_from_jwt(jwt_data)
+        return authentication_provider.get_user(identity, "")
 
     method_decorators.append(jwt_required())
     security_logger.info("\nAuthentication loaded -- api calls now require authorization header")

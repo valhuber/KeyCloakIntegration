@@ -169,19 +169,21 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             for each_column in mapper.columns:
                 rtn_dotmap[each_column.name] = getattr(row, each_column.name)
             return rtn_dotmap
-
-        if db is None:
-            db = safrs.DB         # Use the safrs.DB for database access
-            session = db.session  # sqlalchemy.orm.scoping.scoped_session
-
-        user = session.query(authentication_models.User).filter(authentication_models.User.id == id).one_or_none()
-        if user is None:  #Val - change note to remove try, use 1st user if none (as a temp hack?)
-            logger.info(f'*****\nauth_provider: Create user for: {id}\n*****\n')
-            user = session.query(authentication_models.User).first()
-            #return user
-        logger.info(f'*****\nauth_provider: User: {user}\n*****\n')
+        
+        use_db = False
+        if use_db:
+            if db is None:
+                db = safrs.DB         # Use the safrs.DB for database access
+                session = db.session  # sqlalchemy.orm.scoping.scoped_session
+        
+            user = session.query(authentication_models.User).filter(authentication_models.User.id == id).one_or_none()
+            if user is None:  #Val - change note to remove try, use 1st user if none (as a temp hack?)
+                logger.info(f'*****\nauth_provider: Create user for: {id}\n*****\n')
+                user = session.query(authentication_models.User).first()
+                return user
+            logger.info(f'*****\nauth_provider: User: {user}\n*****\n')
         # get user / roles  from kc
-        try_kc = 'api'  # enables us to turn off experimental code
+        try_kc = 'g'  # enables us to turn off experimental code
         if try_kc == 'jwt_create':
             """ To retrieve user info from the jwt, you may want to look into these functions:
             https://flask-jwt-extended.readthedocs.io/en/stable/automatic_user_loading.html
@@ -221,6 +223,11 @@ class Authentication_Provider(Abstract_Authentication_Provider):
                 # no no access_token = resp_data["access_token"]
                 # instead, create user/roles UserRoleList, caller will create jwt
                 return jsonify(access_token=access_token)
+        elif try_kc == 'g':
+            from flask import g
+            jwt_data = g.jwt_data
+            return Authentication_Provider.get_user_from_jwt(jwt_data)
+            
 
         use_db_row = True  # prior version did not return class with check_password; now fixed
         if use_db_row:
