@@ -8,10 +8,31 @@ from dotmap import DotMap  # a dict, but you can say aDict.name instead of aDict
 from sqlalchemy import inspect
 from http import HTTPStatus
 import logging
+from flask_jwt_extended import JWTManager
+from flask_jwt_extended import create_access_token
+# from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required as jwt_required_ori
+import flask_jwt_extended as flask_jwt_extended
+from flask import jsonify
+import requests  # not working - 404
+import json
+import sys
+import time
+from jwt.algorithms import RSAAlgorithm
+
 
 # **********************
-# sql auth provider
+# keycloak auth provider
 # **********************
+
+def jwt_required(*args, **kwargs):
+    from flask import request
+    _jwt_required_ori = jwt_required_ori(*args, **kwargs)
+    def _wrapper(fn):
+        if request.endpoint == 'api.authentication-User.login':
+            return fn
+        return _jwt_required_ori(fn)
+    return _wrapper
 
 db = None
 session = None
@@ -63,11 +84,6 @@ class Authentication_Provider(Abstract_Authentication_Provider):
     @staticmethod  #val - option for auth provider setup
     def get_jwt_pubkey():  #val changed to use keycloak
         from flask import jsonify, request
-        import sys
-        import requests
-        import json
-        import time
-        from jwt.algorithms import RSAAlgorithm
         #jwks_uri = 'https://kc.hardened.be/realms/master/protocol/openid-connect/certs'
         # TODO use env variable instead of localhost
         jwks_uri = 'http://localhost:8080/realms/kcals/protocol/openid-connect/certs'
@@ -84,33 +100,28 @@ class Authentication_Provider(Abstract_Authentication_Provider):
         return_result = RSAAlgorithm.from_jwk(json.dumps(oidc_jwks_uri["keys"][1]))
         return return_result
 
+    @jwt_required   # so, maybe jwt requires no pwd?
+    def get_jwt_user(id: str) -> object:
+        raw_jwt = flask_jwt_extended.get_jwt()  # You must call `@jwt_required()` or `verify_jwt_in_request()` before using this method
 
+    # @jwt_required   # takes 1 positional argument but 2 were given
     @staticmethod
     def get_user(id: str, password: str = "") -> object:
         """ Must return a row object or UserAndRole(DotMap) with attributes:
-
         * name
-
         * role_list: a list of row objects with attribute name
 
-
         Args:
-            id (str): _description_
+            id (str): the user login id
             password (str, optional): _description_. Defaults to "".
 
         Returns:
             object: row object is a SQLAlchemy row
-
-                * Row Caution: https://docs.sqlalchemy.org/en/14/errors.html#error-bhk3
         """
-        global g_flask_app
-        from flask_jwt_extended import JWTManager
-        from flask_jwt_extended import create_access_token
-        from flask import jsonify
-        import requests  # not working - 404
-        import json
-        from config.config import Args
+        
+        from config.config import Args  # circular import error if at top
 
+        global g_flask_app, db, session
         def row_to_dotmap(row, row_class):
             rtn_dotmap = UserAndRoles() 
             mapper = inspect(row_class)
@@ -118,7 +129,6 @@ class Authentication_Provider(Abstract_Authentication_Provider):
                 rtn_dotmap[each_column.name] = getattr(row, each_column.name)
             return rtn_dotmap
 
-        global db, session
         if db is None:
             db = safrs.DB         # Use the safrs.DB for database access
             session = db.session  # sqlalchemy.orm.scoping.scoped_session
@@ -130,8 +140,8 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             #return user
         logger.info(f'*****\nauth_provider: User: {user}\n*****\n')
         # get user / roles  from kc
-        try_kc = 'api'  # enables us to turn off experimental code
-        if try_kc == 'jwt':
+        try_kc = 'jwt_get_raw_jwt'  # enables us to turn off experimental code
+        if try_kc == 'jwt_create':
             """ To retrieve user info from the jwt, you may want to look into these functions:
             https://flask-jwt-extended.readthedocs.io/en/stable/automatic_user_loading.html
             as used in security/system/authentication.py 
@@ -149,7 +159,11 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             # jwt = JWTManager(g_flask_app)  # can't use this...
             # fails with: AssertionError: The setup method 'errorhandler' can no longer be called on the application. It has already handled its first request, any changes will not be applied consistently.
             # Make sure all imports, decorators, functions, etc. needed to set up the application are done before running it.
-
+        elif try_kc == "jwt_get_raw_jwt":  # https://flask-jwt-extended.readthedocs.io/en/3.0.0_release/api/
+            # verified_jwt = flask_jwt_extended.verify_jwt_in_request()  # blows stack
+            # raw_jwt = flask_jwt_extended.get_jwt()  # You must call `@jwt_required()` or `verify_jwt_in_request()` before using this method
+            Authentication_Provider.get_jwt_user(id=id)
+            pass
         elif try_kc == 'api':  # get jwt for user info & roles
             KC_BASE = 'http://localhost:8080/realms/kcals'
             KC_BASE = Args.instance.keycloak_base
