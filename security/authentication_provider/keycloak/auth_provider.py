@@ -129,8 +129,8 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             user = session.query(authentication_models.User).first()
             #return user
         logger.info(f'*****\nauth_provider: User: {user}\n*****\n')
-        # get user / roles from kc
-        try_kc = 'jwt'  # enables us to turn off experimental code
+        # get user / roles  from kc
+        try_kc = 'api'  # enables us to turn off experimental code
         if try_kc == 'jwt':
             """ To retrieve user info from the jwt, you may want to look into these functions:
             https://flask-jwt-extended.readthedocs.io/en/stable/automatic_user_loading.html

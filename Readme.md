@@ -109,6 +109,12 @@ JWT validation is implemented in [projects/KCALS/security/system/authentication.
 
 By default, apilogicserver authentication uses a user database. Our users are defined in keycloak however. I had to change [auth_provider.py](auth_provider.py) for this to (kinda) work.
 
+## Getting the jwt
+
+Presuming the correct approach is by-id (not by create_access_token(identity=user_identity)), we are still failing:
+
+![jwt-post-failing](images/jwt-post-failing.png)
+
 &nbsp;
 
 ## React-Admin
