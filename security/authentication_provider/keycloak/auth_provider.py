@@ -117,15 +117,17 @@ class Authentication_Provider(Abstract_Authentication_Provider):
         user = authentication_models.User(id=name)
         user.client_id = 1
         user.password_hash = None
-        #role_names = data["realm_access"]["roles"]
-
+        role_names = data["realm_access"]["roles"]
+        role_names.append("customer") #Temp role for testing
         user_role = authentication_models.UserRole(user_id=name,role_name="customer")
         rtn_user = row_to_dotmap(user, authentication_models.User)
         rtn_user.UserRoleList = []
         #user_roles = getattr(user, "UserRoleList")
-        #for each_row in user_roles:
-        each_user_role = row_to_dotmap(user_role, authentication_models.UserRole)
-        rtn_user.UserRoleList.append(each_user_role)
+        for each_row in role_names:
+            each_user_role = row_to_dotmap(user_role, authentication_models.UserRole)
+            each_user_role["role_name"] = each_row
+            rtn_user.UserRoleList.append(each_user_role)
+
         return rtn_user
         
     # @jwt_required   # so, maybe jwt requires no pwd?
