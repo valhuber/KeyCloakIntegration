@@ -191,7 +191,8 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             resp = requests.post(msg_url, data)
             if resp.status_code == 200:
                 resp_data = json.loads(resp.text)
-                access_token = resp_data["access_token"]
+                # no no access_token = resp_data["access_token"]
+                # instead, create user/roles UserRoleList, caller will create jwt
                 return jsonify(access_token=access_token)
 
         use_db_row = True  # prior version did not return class with check_password; now fixed
