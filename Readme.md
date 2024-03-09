@@ -20,6 +20,27 @@ This will run keycloak on the docker host (use admin, password):
 
 &nbsp;
 
+### Define Users and Roles
+
+This works - you can define users, and they are available (with their roles) at runtime:
+
+![Users](images/kc-users.png)
+
+### Define Attributes
+
+I can enter User Attributes:
+
+![Users](images/kc-attrs.png)
+
+And, [using this](https://www.baeldung.com/keycloak-custom-user-attributes), register mappers:
+
+![kc-client-attr-mapper](images/kc-client-attr-mapper.png)
+
+But unable to access:
+
+![Users](images/kc-attrs-access.png)
+
+
 ## Test:
 
 ### 1. Keycloak Unit Test

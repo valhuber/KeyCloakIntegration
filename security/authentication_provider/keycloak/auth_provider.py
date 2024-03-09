@@ -104,6 +104,35 @@ class Authentication_Provider(Abstract_Authentication_Provider):
         return return_jwt
 
     @staticmethod
+    def get_user_from_jwt(jwt_data: dict) -> object:
+        """return DotMapX (user+roles) from jwt_data
+
+        Args:
+            jwt_data (dict): jwt, as saved in password
+
+        Returns:
+            object: ApiLogicServer user (with roles) DotMapX object
+        """
+        rtn_user = DotMapX()
+        rtn_user.client_id = 1  # hack until user data in place
+        rtn_user.name = jwt_data["preferred_username"]
+        rtn_user.password_hash = None
+
+        # get extended properties (e.g, client_id in sample app)
+
+        rtn_user.UserRoleList = []
+        role_names = jwt_data["realm_access"]["roles"]
+        # role_names.append("customer") #Temp role for testing
+        for each_role_name in role_names:
+            each_user_role = DotMapX()
+            each_user_role.role_name = each_role_name
+            rtn_user.UserRoleList.append(each_user_role)
+        customer_role = DotMapX()
+        customer_role.role_name = 'customer'
+        rtn_user.UserRoleList.append(customer_role)  # hack until user data in place
+        return rtn_user
+    
+    @staticmethod
     def get_user(id: str, password: str = "") -> object:
         """ Must return a row object or UserAndRole(DotMap) with attributes:
         * name
@@ -194,23 +223,5 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             # from flask import g
             # jwt_data = g.jwt_data  # saved in authentication#user_lookup_callback()
             jwt_data : dict = password
-            use_fn = False
-            if use_fn:
-                rtn_user = Authentication_Provider.get_user_from_jwt(jwt_data)
-                return rtn_user
-            rtn_user = DotMapX()
-            rtn_user.client_id = 1  # hack until user data in place
-            rtn_user.name =jwt_data["preferred_username"]
-            rtn_user.password_hash = None
-
-            rtn_user.UserRoleList = []
-            role_names = jwt_data["realm_access"]["roles"]
-            # role_names.append("customer") #Temp role for testing
-            for each_role_name in role_names:
-                each_user_role = DotMapX()
-                each_user_role.role_name = each_role_name
-                rtn_user.UserRoleList.append(each_user_role)
-            customer_role = DotMapX()
-            customer_role.role_name = 'customer'
-            rtn_user.UserRoleList.append(customer_role)  # hack until user data in place
+            rtn_user = Authentication_Provider.get_user_from_jwt(jwt_data)
             return rtn_user
