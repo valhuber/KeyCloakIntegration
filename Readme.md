@@ -121,7 +121,16 @@ Then, change the docker-compose keycloak volumes to:
     volumes:
         - $PWD/data:/opt/keycloak/data
 
-This way, the /opt/keycloak/data will remain on the docker host mounted directory ($PWD/data)
+Finally, update the docker-compose file so that the imports don't overwrite the mounted volume settings:
+1. Remove the `--import-realm`
+2. Remove `- $PWD/import:/opt/keycloak/data/import`
+This way, the /opt/keycloak/data will remain on the docker host mounted directory ($PWD/data).
+
+Access data - this does not appear to work (no cli):
+```bash
+docker cp keycloak:/opt/keycloak/data ~/Desktop/keycloak
+
+```
 
 &nbsp;
 
