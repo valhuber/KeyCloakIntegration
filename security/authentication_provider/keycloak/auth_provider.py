@@ -130,9 +130,6 @@ class Authentication_Provider(Abstract_Authentication_Provider):
             each_user_role = DotMapX()
             each_user_role.role_name = each_role_name
             rtn_user.UserRoleList.append(each_user_role)
-        customer_role = DotMapX()
-        customer_role.role_name = 'customer'
-        rtn_user.UserRoleList.append(customer_role)  # hack until user data in place
         return rtn_user
     
     @staticmethod
