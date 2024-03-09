@@ -119,6 +119,9 @@ class Authentication_Provider(Abstract_Authentication_Provider):
         rtn_user.password_hash = None
 
         # get extended properties (e.g, client_id in sample app)
+        attributes = jwt_data['attributes']
+        for each_name, each_value in attributes.items():
+            rtn_user[each_name] = each_value
 
         rtn_user.UserRoleList = []
         role_names = jwt_data["realm_access"]["roles"]

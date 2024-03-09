@@ -22,7 +22,7 @@ This will run keycloak on the docker host (use admin, password):
 
 ### Define Users and Roles
 
-This works - you can define users, and they are available (with their roles) at runtime:
+This works - you can define users, and they are available (with their roles) at runtime (see the jwt.io screenshot, below):
 
 ![Users](images/kc-users.png)
 
@@ -36,10 +36,15 @@ And, [using this](https://www.baeldung.com/keycloak-custom-user-attributes), reg
 
 ![kc-client-attr-mapper](images/kc-client-attr-mapper.png)
 
-But unable to access:
+You must provide the `Token Claim Name`:
 
-![Users](images/kc-attrs-access.png)
+![kc-client-attr-mapper-def](images/kc-client-attr-mapper-def.png)
 
+### Authorization Failing
+
+Login as u1.   Somehow, the `customer` role is assigned, which makes it fail (return >1 Category).
+
+&nbsp;
 
 ## Test:
 
@@ -56,7 +61,7 @@ TOKEN_ENDPOINT=$(curl ${KC_BASE}/.well-known/openid-configuration | jq -r .token
 echo "TOKEN_ENDPOINT: ${TOKEN_ENDPOINT} \n"
 
 echo "retrieve an access token by logging in "
-TOKEN=$(curl ${TOKEN_ENDPOINT} -d 'grant_type=password&client_id=alsclient' -d 'username=demo' -d 'password=demo' | jq -r .access_token)
+TOKEN=$(curl ${TOKEN_ENDPOINT} -d 'grant_type=password&client_id=alsclient' -d 'username=u1' -d 'password=p' | jq -r .access_token)
 echo "TOKEN: ${TOKEN} \n"
 
 # test the authentication
@@ -94,7 +99,7 @@ Several changes to adapt the original poc to API Logic Server structure:
 
 ### Inspecting Access Tokens
 
-You can usejwt.io:
+You can use jwt.io:
 
 ![jwt.io](images/jwt.io.png)
 
