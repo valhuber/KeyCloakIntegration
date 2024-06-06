@@ -61,8 +61,8 @@ class Authentication_Provider(Abstract_Authentication_Provider):
         Returns:
             _type_: (no return)
         """
-        flask_app.config["JWT_PUBLIC_KEY"] = Authentication_Provider.get_jwt_public_key()
         flask_app.config['JWT_ALGORITHM'] = 'RS256'
+        flask_app.config["JWT_PUBLIC_KEY"] = Authentication_Provider.get_jwt_public_key('RS256')
         do_priv_key = False
         if do_priv_key:
             flask_app.config["JWT_PRIVATE_KEY"] = \
@@ -70,14 +70,15 @@ class Authentication_Provider(Abstract_Authentication_Provider):
         return
 
     @staticmethod
-    def get_jwt_public_key():
+    def get_jwt_public_key(alg, kid=None):
         from flask import jsonify, request
-        #jwks_uri = 'https://kc.hardened.be/realms/master/protocol/openid-connect/certs'
+        jwks_uri = 'https://kc.hardened.be/realms/kcals/protocol/openid-connect/certs'
+        #jwks_uri = 'http://localhost:8080/realms/kcals/protocol/openid-connect/certs'
         # TODO use env variable instead of localhost
-        jwks_uri = 'http://localhost:8080/realms/kcals/protocol/openid-connect/certs'
+        #jwks_uri = 'http://localhost:8080/realms/kcals/protocol/openid-connect/certs'
         for i in range(100):
             try:
-                oidc_jwks_uri = requests.get(jwks_uri, verify=False).json()
+                keys = requests.get(jwks_uri).json()['keys']
                 break
             except:
                 # waiting .. container may still be sleeping
@@ -85,9 +86,12 @@ class Authentication_Provider(Abstract_Authentication_Provider):
         else:
             print(f'Failed to load jwks_uri {jwks_uri}')
             sys.exit(1)
-        return_result = RSAAlgorithm.from_jwk(json.dumps(oidc_jwks_uri["keys"][1]))
-        return return_result  # is this an rsa-aware callback??   It's not a jwt
-        
+        for key in keys:
+            if key['alg'] == alg or key['kid'] == kid:
+                logger.info(f"Found JWK: {key['kid']}")
+                return RSAAlgorithm.from_jwk(json.dumps(key))
+        exit(1)
+
     # @jwt_required   # so, maybe jwt requires no pwd?
     def get_jwt_user(id: str) -> object:  # for experiment: jwt_get_raw_jwt
         from flask_jwt_extended import get_jwt
@@ -119,6 +123,8 @@ class Authentication_Provider(Abstract_Authentication_Provider):
         rtn_user.password_hash = None
 
         # get extended properties (e.g, client_id in sample app)
+        if not "attributes" in jwt_data:
+            return rtn_user
         attributes = jwt_data['attributes']
         for each_name, each_value in attributes.items():
             rtn_user[each_name] = each_value
